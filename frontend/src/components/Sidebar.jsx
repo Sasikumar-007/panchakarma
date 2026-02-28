@@ -82,6 +82,7 @@ export default function Sidebar() {
                     <div className="sidebar-avatar">{initials}</div>
                     <div>
                         <div className="sidebar-user-name">{profile?.full_name || 'User'}</div>
+                        <div className="sidebar-user-role" style={{ textTransform: 'none', marginBottom: '2px' }}>{profile?.email}</div>
                         <div className="sidebar-user-role">{role}</div>
                     </div>
                 </div>
