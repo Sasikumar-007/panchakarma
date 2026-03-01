@@ -7,7 +7,7 @@ import hashlib
 from config import get_razorpay_client, RAZORPAY_KEY_SECRET, get_supabase_admin
 
 
-def create_order(amount: int, currency: str = "INR", receipt: str = None, notes: dict = None) -> dict:
+def create_order(amount: int, currency: str = "INR", receipt: str | None = None, notes: dict | None = None) -> dict:
     """
     Create a Razorpay order.
 
@@ -28,7 +28,7 @@ def create_order(amount: int, currency: str = "INR", receipt: str = None, notes:
         "notes": notes or {},
     }
     try:
-        order = client.order.create(data=order_data)
+        order = client.orders.create(data=order_data)
         return {"success": True, "order": order}
     except Exception as e:
         return {"success": False, "error": str(e)}
