@@ -123,28 +123,16 @@ CREATE TABLE IF NOT EXISTS billing (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     patient_id UUID REFERENCES patients(id) ON DELETE CASCADE,
     appointment_id UUID REFERENCES appointments(id),
-    amount NUMERIC NOT NULL DEFAULT 0,
+    therapy_id UUID REFERENCES therapies(id),
+    consultation_fee NUMERIC NOT NULL DEFAULT 0,
+    therapy_fee NUMERIC NOT NULL DEFAULT 0,
+    total_amount NUMERIC NOT NULL DEFAULT 0,
     description TEXT DEFAULT 'Panchakarma Treatment',
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'cancelled', 'refunded')),
-    razorpay_order_id TEXT,
-    razorpay_payment_id TEXT,
-    razorpay_signature TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- =============================================
--- PAYMENTS TABLE
--- =============================================
-CREATE TABLE IF NOT EXISTS payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    billing_id UUID REFERENCES billing(id) ON DELETE CASCADE,
-    razorpay_order_id TEXT,
-    razorpay_payment_id TEXT,
-    amount NUMERIC DEFAULT 0,
-    status TEXT DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
 -- =============================================
 -- ROW LEVEL SECURITY
@@ -158,7 +146,6 @@ ALTER TABLE dosha_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE therapies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE billing ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own profile; admins can read all
 CREATE POLICY "users_select" ON users FOR SELECT USING (
@@ -211,7 +198,6 @@ CREATE POLICY "service_role_bypass_dosha" ON dosha_results FOR ALL TO service_ro
 CREATE POLICY "service_role_bypass_therapies" ON therapies FOR ALL TO service_role USING (true);
 CREATE POLICY "service_role_bypass_prescriptions" ON prescriptions FOR ALL TO service_role USING (true);
 CREATE POLICY "service_role_bypass_billing" ON billing FOR ALL TO service_role USING (true);
-CREATE POLICY "service_role_bypass_payments" ON payments FOR ALL TO service_role USING (true);
 
 -- =============================================
 -- INDEXES for performance

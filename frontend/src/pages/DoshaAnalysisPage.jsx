@@ -13,8 +13,8 @@ export default function DoshaAnalysisPage() {
     const [loading, setLoading] = useState(true);
     const [analyzing, setAnalyzing] = useState(false);
     const [showPrescription, setShowPrescription] = useState(false);
-    const [rxForm, setRxForm] = useState({ medicines: '', instructions: '', diagnosis: '' });
-    const [billForm, setBillForm] = useState({ amount: '', description: 'Panchakarma Treatment' });
+    const [rxForm, setRxForm] = useState({ medicines: '', instructions: '', diagnosis: '', duration: '7 days', dosage: 'Twice daily' });
+    const [billForm, setBillForm] = useState({ consultation_fee: '1000', therapy_fee: '2500' });
     const [therapistSuggestion, setTherapistSuggestion] = useState(null);
 
     useEffect(() => {
@@ -67,28 +67,40 @@ export default function DoshaAnalysisPage() {
                 patient_id: selectedAppt.patient_id,
                 diagnosis: rxForm.diagnosis || `${result.dominant_dosha} Dosha imbalance`,
                 medicines: rxForm.medicines.split(',').map(m => m.trim()).filter(Boolean),
-                instructions: rxForm.instructions,
+                instructions: `${rxForm.dosage} for ${rxForm.duration}. ${rxForm.instructions}`,
             });
-            toast.success('Prescription generated!');
-            setShowPrescription(false);
-        } catch (err) {
-            toast.error('Failed to generate prescription');
-        }
-    };
 
-    const generateBill = async () => {
-        if (!billForm.amount) { toast.error('Enter amount'); return; }
-        try {
+            const therapistId = therapistSuggestion?.recommended?.id || therapistSuggestion?.recommended?.user_id || null;
+            if (therapistId) {
+                await therapiesAPI.create({
+                    appointment_id: selectedAppt.id,
+                    patient_id: selectedAppt.patient_id,
+                    therapist_id: therapistId,
+                    therapy_type: result.recommended_therapies[0] || 'Panchakarma',
+                    start_date: new Date().toISOString().split('T')[0],
+                    end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                });
+            }
+
+            const conFee = parseFloat(billForm.consultation_fee) || 0;
+            const thFee = parseFloat(billForm.therapy_fee) || 0;
             await billingAPI.create({
                 patient_id: selectedAppt.patient_id,
                 appointment_id: selectedAppt.id,
-                amount: parseFloat(billForm.amount),
-                description: billForm.description,
+                consultation_fee: conFee,
+                therapy_fee: thFee,
+                total_amount: conFee + thFee,
+                description: rxForm.diagnosis || 'Consultation & Therapy',
             });
-            toast.success('Bill generated!');
-            setBillForm({ amount: '', description: 'Panchakarma Treatment' });
+
+            toast.success('Prescription, Therapy, and Bill generated successfully!');
+            setResult(null);
+            setSelectedAppt(null);
+            setSelected([]);
+            setRxForm({ medicines: '', instructions: '', diagnosis: '', duration: '7 days', dosage: 'Twice daily' });
+            setBillForm({ consultation_fee: '1000', therapy_fee: '2500' });
         } catch (err) {
-            toast.error('Failed to generate bill');
+            toast.error('Failed to generate full prescription flow');
         }
     };
 
@@ -177,38 +189,55 @@ export default function DoshaAnalysisPage() {
 
                     {/* Step 4: Actions */}
                     <div className="card-grid card-grid-2">
-                        <div className="card">
-                            <div className="card-title mb-4">📝 Generate Prescription</div>
-                            <div className="form-group">
-                                <label className="form-label">Diagnosis</label>
-                                <input className="form-input" value={rxForm.diagnosis} onChange={e => setRxForm(f => ({ ...f, diagnosis: e.target.value }))}
-                                    placeholder={`${result.dominant_dosha} Dosha imbalance`} />
+                        <div className="card" style={{ gridColumn: 'span 2' }}>
+                            <div className="card-title mb-4">📝 Complete Prescription & Billing Form</div>
+                            <div className="card-grid card-grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Diagnosis Description</label>
+                                    <input className="form-input" value={rxForm.diagnosis} onChange={e => setRxForm(f => ({ ...f, diagnosis: e.target.value }))}
+                                        placeholder={`${result.dominant_dosha} Dosha imbalance`} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Dynamic Medicines</label>
+                                    <input className="form-input" value={rxForm.medicines} onChange={e => setRxForm(f => ({ ...f, medicines: e.target.value }))}
+                                        placeholder={result.recommended_medicines.join(', ')} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Dosage Instructions</label>
+                                    <input className="form-input" value={rxForm.dosage} onChange={e => setRxForm(f => ({ ...f, dosage: e.target.value }))}
+                                        placeholder="Twice daily" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Duration</label>
+                                    <input className="form-input" value={rxForm.duration} onChange={e => setRxForm(f => ({ ...f, duration: e.target.value }))}
+                                        placeholder="7 days" />
+                                </div>
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Additional Instructions</label>
+                                    <textarea className="form-input" value={rxForm.instructions} onChange={e => setRxForm(f => ({ ...f, instructions: e.target.value }))}
+                                        placeholder="Dosage and care instructions" rows={2} />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Medicines (comma-separated)</label>
-                                <input className="form-input" value={rxForm.medicines} onChange={e => setRxForm(f => ({ ...f, medicines: e.target.value }))}
-                                    placeholder={result.recommended_medicines.join(', ')} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Instructions</label>
-                                <textarea className="form-input" value={rxForm.instructions} onChange={e => setRxForm(f => ({ ...f, instructions: e.target.value }))}
-                                    placeholder="Dosage and care instructions" rows={3} />
-                            </div>
-                            <button className="btn btn-primary" onClick={generatePrescription}>Generate Prescription</button>
-                        </div>
 
-                        <div className="card">
-                            <div className="card-title mb-4">💳 Generate Bill</div>
-                            <div className="form-group">
-                                <label className="form-label">Amount (₹)</label>
-                                <input className="form-input" type="number" value={billForm.amount} onChange={e => setBillForm(f => ({ ...f, amount: e.target.value }))}
-                                    placeholder="e.g. 5000" />
+                            <hr style={{ margin: '20px 0', borderColor: 'var(--border-light)' }} />
+
+                            <div className="card-grid card-grid-3">
+                                <div className="form-group">
+                                    <label className="form-label">Consultation Fee (₹)</label>
+                                    <input className="form-input" type="number" value={billForm.consultation_fee} onChange={e => setBillForm(f => ({ ...f, consultation_fee: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Therapy Fee (₹)</label>
+                                    <input className="form-input" type="number" value={billForm.therapy_fee} onChange={e => setBillForm(f => ({ ...f, therapy_fee: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Total Amount (₹)</label>
+                                    <div className="form-input" style={{ background: '#f8fafc', fontWeight: 700 }}>
+                                        ₹{(parseFloat(billForm.consultation_fee) || 0) + (parseFloat(billForm.therapy_fee) || 0)}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Description</label>
-                                <input className="form-input" value={billForm.description} onChange={e => setBillForm(f => ({ ...f, description: e.target.value }))} />
-                            </div>
-                            <button className="btn btn-secondary" onClick={generateBill}>Generate Bill</button>
+                            <button className="btn btn-primary" style={{ width: '100%', marginTop: '10px' }} onClick={generatePrescription}>Generate Prescription & Assign Therapy</button>
                         </div>
                     </div>
                 </div>

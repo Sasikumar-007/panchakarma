@@ -11,7 +11,9 @@ export default function AppointmentsPage() {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({ doctor_id: '', date: '', time_slot: '', notes: '' });
+    const [editMode, setEditMode] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const [form, setForm] = useState({ doctor_id: '', date: '', time_slot: '', notes: '', status: 'scheduled' });
 
     useEffect(() => {
         load();
@@ -35,14 +37,34 @@ export default function AppointmentsPage() {
     const handleBook = async (e) => {
         e.preventDefault();
         try {
-            await appointmentsAPI.create(form);
-            toast.success('Appointment booked!');
+            if (editMode) {
+                await appointmentsAPI.update(editId, form);
+                toast.success('Appointment updated!');
+            } else {
+                await appointmentsAPI.create(form);
+                toast.success('Appointment booked!');
+            }
             setShowModal(false);
-            setForm({ doctor_id: '', date: '', time_slot: '', notes: '' });
+            setForm({ doctor_id: '', date: '', time_slot: '', notes: '', status: 'scheduled' });
+            setEditMode(false);
+            setEditId(null);
             load();
         } catch (err) {
-            toast.error('Failed to book appointment');
+            toast.error(editMode ? 'Failed to update' : 'Failed to book appointment');
         }
+    };
+
+    const handleEditClick = (appt) => {
+        setForm({
+            doctor_id: appt.doctor_id || '',
+            date: appt.date || '',
+            time_slot: appt.time_slot || '',
+            notes: appt.notes || '',
+            status: appt.status || 'scheduled'
+        });
+        setEditId(appt.id);
+        setEditMode(true);
+        setShowModal(true);
     };
 
     const handleCancel = async (id) => {
@@ -66,7 +88,11 @@ export default function AppointmentsPage() {
                     <p className="page-description">Manage your appointments</p>
                 </div>
                 {profile?.role === 'patient' && (
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                    <button className="btn btn-primary" onClick={() => {
+                        setEditMode(false);
+                        setForm({ doctor_id: '', date: '', time_slot: '', notes: '', status: 'scheduled' });
+                        setShowModal(true);
+                    }}>
                         <FiPlus /> Book Appointment
                     </button>
                 )}
@@ -93,7 +119,10 @@ export default function AppointmentsPage() {
                                     <td>{a.date}</td>
                                     <td>{a.time_slot}</td>
                                     <td><StatusBadge status={a.status} /></td>
-                                    <td>
+                                    <td className="flex gap-2">
+                                        {profile?.role === 'admin' && (
+                                            <button className="btn btn-sm btn-ghost" onClick={() => handleEditClick(a)}>Edit</button>
+                                        )}
                                         {a.status === 'scheduled' && (
                                             <button className="btn btn-sm btn-ghost" onClick={() => handleCancel(a.id)}>Cancel</button>
                                         )}
@@ -110,11 +139,11 @@ export default function AppointmentsPage() {
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                title="Book Appointment"
+                title={editMode ? 'Edit Appointment' : 'Book Appointment'}
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleBook}>Book</button>
+                        <button className="btn btn-primary" onClick={handleBook}>{editMode ? 'Save Changes' : 'Book'}</button>
                     </>
                 }
             >
@@ -139,6 +168,16 @@ export default function AppointmentsPage() {
                             ))}
                         </select>
                     </div>
+                    {editMode && (
+                        <div className="form-group">
+                            <label className="form-label">Status</label>
+                            <select className="form-input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} required>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    )}
                     <div className="form-group">
                         <label className="form-label">Notes (optional)</label>
                         <textarea className="form-input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Describe your symptoms or concerns" />

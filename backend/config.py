@@ -6,9 +6,13 @@ import razorpay
 load_dotenv()
 
 # Supabase
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ecnvqliessxiowtduowj.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjbnZxbGllc3N4aW93dGR1b3dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNzEyNjIsImV4cCI6MjA4Nzg0NzI2Mn0.dWKAtmPdJGklO6n9nBqd349KRdpsb07IolaP-Ezpg0M")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "http://localhost:1234")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "dummy")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "dummy")
+if not SUPABASE_URL:
+    print("Warning: SUPABASE_URL is not set in environment; set it in backend/.env or system env vars")
+if not SUPABASE_KEY and not SUPABASE_SERVICE_KEY:
+    print("Warning: SUPABASE_KEY or SUPABASE_SERVICE_KEY not set; backend Supabase access will fail without keys")
 JWT_SECRET = os.getenv("JWT_SECRET", "your-jwt-secret")
 
 # Razorpay

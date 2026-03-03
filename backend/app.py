@@ -13,6 +13,8 @@ from routes.therapies import therapies_bp
 from routes.prescriptions import prescriptions_bp
 from routes.billing import billing_bp
 from routes.admin import admin_bp
+from routes.notifications import notifications_bp
+from routes.logs import logs_bp
 
 
 def create_app():
@@ -20,7 +22,7 @@ def create_app():
     app.config["SECRET_KEY"] = SECRET_KEY
 
     # CORS — allow frontend origins
-    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}}, supports_credentials=True)
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -29,6 +31,8 @@ def create_app():
     app.register_blueprint(prescriptions_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(logs_bp)
 
     # Health check
     @app.route("/api/health")

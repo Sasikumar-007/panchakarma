@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../api';
 import { StatusBadge, EmptyState, Loader, Modal, StatCard } from '../components/UI';
-import { FiUsers, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { FiUsers, FiTrash2, FiEdit2, FiPlus } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ManageUsersPage() {
@@ -32,12 +32,17 @@ export default function ManageUsersPage() {
 
     const saveEdit = async () => {
         try {
-            await adminAPI.updateUser(editUser.id, editForm);
-            toast.success('User updated');
+            if (editUser === 'NEW') {
+                await adminAPI.createUser(editForm);
+                toast.success('User created successfully');
+            } else {
+                await adminAPI.updateUser(editUser.id, editForm);
+                toast.success('User updated');
+            }
             setEditUser(null);
             load();
         } catch (err) {
-            toast.error('Update failed');
+            toast.error(editUser === 'NEW' ? 'Failed to create user' : 'Update failed');
         }
     };
 
@@ -59,7 +64,7 @@ export default function ManageUsersPage() {
                     <h1 className="page-title">👥 Manage Users</h1>
                     <p className="page-description">View and manage all system users</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                     {['', 'doctor', 'therapist', 'patient', 'admin'].map(r => (
                         <button
                             key={r}
@@ -69,6 +74,13 @@ export default function ManageUsersPage() {
                             {r || 'All'}
                         </button>
                     ))}
+                    <span className="mx-2 text-gray-300">|</span>
+                    <button className="btn btn-sm btn-primary" onClick={() => {
+                        setEditForm({ email: '', password: '', full_name: '', role: 'doctor' });
+                        setEditUser('NEW');
+                    }}>
+                        <FiPlus /> Add User
+                    </button>
                 </div>
             </div>
 
@@ -91,8 +103,8 @@ export default function ManageUsersPage() {
                                     <td>{u.email}</td>
                                     <td>
                                         <span className={`badge ${u.role === 'admin' ? 'badge-red' :
-                                                u.role === 'doctor' ? 'badge-blue' :
-                                                    u.role === 'therapist' ? 'badge-purple' : 'badge-green'
+                                            u.role === 'doctor' ? 'badge-blue' :
+                                                u.role === 'therapist' ? 'badge-purple' : 'badge-green'
                                             }`}>
                                             {u.role}
                                         </span>
@@ -114,7 +126,7 @@ export default function ManageUsersPage() {
             <Modal
                 isOpen={!!editUser}
                 onClose={() => setEditUser(null)}
-                title="Edit User"
+                title={editUser === 'NEW' ? 'Add New User' : 'Edit User'}
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setEditUser(null)}>Cancel</button>
@@ -126,6 +138,18 @@ export default function ManageUsersPage() {
                     <label className="form-label">Full Name</label>
                     <input className="form-input" value={editForm.full_name} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} />
                 </div>
+                {editUser === 'NEW' && (
+                    <>
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input className="form-input" type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Password</label>
+                            <input className="form-input" type="password" value={editForm.password} onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))} />
+                        </div>
+                    </>
+                )}
                 <div className="form-group">
                     <label className="form-label">Role</label>
                     <select className="form-input" value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}>

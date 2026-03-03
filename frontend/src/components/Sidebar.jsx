@@ -10,6 +10,7 @@ const NAV_CONFIG = {
         { to: '/dashboard', icon: FiHome, label: 'Dashboard' },
         { to: '/appointments', icon: FiCalendar, label: 'Appointments' },
         { to: '/dosha-check', icon: FiActivity, label: 'AI Dosha Check' },
+        { to: '/dosha-history', icon: FiClipboard, label: 'Dosha History' },
         { to: '/prescriptions', icon: FiFileText, label: 'Prescriptions' },
         { to: '/billing', icon: FiDollarSign, label: 'Bills & Payments' },
     ],
@@ -27,11 +28,14 @@ const NAV_CONFIG = {
     admin: [
         { to: '/dashboard', icon: FiHome, label: 'Dashboard' },
         { to: '/manage-users', icon: FiUsers, label: 'Manage Users' },
+        { to: '/activity-logs', icon: FiClipboard, label: 'Activity Logs' },
         { to: '/appointments', icon: FiCalendar, label: 'Appointments' },
         { to: '/analytics', icon: FiBarChart2, label: 'Analytics' },
         { to: '/billing', icon: FiDollarSign, label: 'Revenue' },
     ],
 };
+
+import Logo from './Logo';
 
 export default function Sidebar() {
     const { profile, logout } = useAuth();
@@ -52,10 +56,10 @@ export default function Sidebar() {
         .slice(0, 2);
 
     return (
-        <aside className="sidebar">
+        <aside className="sidebar glass-effect">
             <div className="sidebar-header">
-                <div className="sidebar-logo">🏥</div>
-                <div>
+                <Logo size={44} />
+                <div style={{ marginLeft: 8 }}>
                     <div className="sidebar-title">Panchakarma</div>
                     <div className="sidebar-subtitle">Patient Management</div>
                 </div>

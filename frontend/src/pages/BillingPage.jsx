@@ -27,47 +27,11 @@ export default function BillingPage() {
     const handlePay = async (bill) => {
         setPaying(bill.id);
         try {
-            const res = await billingAPI.initPayment(bill.id);
-            const { order_id, amount, key_id } = res.data;
-
-            // Load Razorpay checkout
-            const options = {
-                key: key_id,
-                amount: amount,
-                currency: 'INR',
-                name: 'Panchakarma PMS',
-                description: bill.description || 'Treatment Payment',
-                order_id: order_id,
-                handler: async function (response) {
-                    try {
-                        await billingAPI.confirmPayment(bill.id, {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        toast.success('Payment successful!');
-                        load();
-                    } catch (err) {
-                        toast.error('Payment confirmation failed');
-                    }
-                },
-                prefill: {
-                    email: profile?.email || '',
-                    name: profile?.full_name || '',
-                },
-                theme: {
-                    color: '#2563EB',
-                },
-            };
-
-            if (window.Razorpay) {
-                const rzp = new window.Razorpay(options);
-                rzp.open();
-            } else {
-                toast.error('Razorpay SDK not loaded. Please refresh and try again.');
-            }
+            await billingAPI.updateBill(bill.id, { payment_status: 'Paid' });
+            toast.success('Bill marked as Paid successfully!');
+            load();
         } catch (err) {
-            toast.error('Failed to initiate payment');
+            toast.error('Failed to mark as paid');
         } finally {
             setPaying(null);
         }
@@ -78,7 +42,7 @@ export default function BillingPage() {
     return (
         <div className="fade-in">
             <div className="page-header">
-                <h1 className="page-title">💳 Bills & Payments</h1>
+                <h1 className="page-title">💳 My Bills</h1>
                 <p className="page-description">View and pay your bills</p>
             </div>
 
@@ -87,20 +51,22 @@ export default function BillingPage() {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Description</th>
-                                <th>Amount</th>
+                                <th>Therapy Name</th>
+                                <th>Consultation Fee</th>
+                                <th>Therapy Fee</th>
+                                <th>Total Amount</th>
                                 <th>Status</th>
-                                <th>Date</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {bills.map(b => (
                                 <tr key={b.id}>
-                                    <td>{b.description || 'Treatment'}</td>
-                                    <td style={{ fontWeight: 700 }}>₹{Number(b.amount).toLocaleString()}</td>
+                                    <td>{b.therapies?.therapy_type || b.description || 'Treatment'}</td>
+                                    <td>₹{Number(b.consultation_fee || 0).toLocaleString()}</td>
+                                    <td>₹{Number(b.therapy_fee || 0).toLocaleString()}</td>
+                                    <td style={{ fontWeight: 700 }}>₹{Number(b.total_amount || 0).toLocaleString()}</td>
                                     <td><StatusBadge status={b.status} /></td>
-                                    <td>{new Date(b.created_at).toLocaleDateString()}</td>
                                     <td>
                                         {b.status === 'pending' && profile?.role === 'patient' && (
                                             <button
@@ -108,7 +74,7 @@ export default function BillingPage() {
                                                 onClick={() => handlePay(b)}
                                                 disabled={paying === b.id}
                                             >
-                                                {paying === b.id ? 'Processing...' : 'Pay Now'}
+                                                {paying === b.id ? 'Processing...' : 'Mark as Paid'}
                                             </button>
                                         )}
                                         {b.status === 'paid' && <span style={{ color: 'var(--success)', fontSize: 13 }}>✅ Paid</span>}

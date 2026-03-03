@@ -7,12 +7,19 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT to every request
+// Attach JWT and Mock Role to every request
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token');
+    const role = localStorage.getItem('mock_role');
+
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (role) {
+        config.headers['X-Mock-Role'] = role;
+    }
+
     return config;
 });
 
@@ -56,18 +63,31 @@ export const prescriptionsAPI = {
 export const billingAPI = {
     getAll: () => api.get('/billing'),
     create: (data) => api.post('/billing', data),
-    initPayment: (id) => api.post(`/billing/${id}/pay`),
-    confirmPayment: (id, data) => api.post(`/billing/${id}/confirm`, data),
+    getPatientBills: (patientId) => api.get(`/billing/${patientId}`),
+    updateBill: (id, data) => api.put(`/billing/${id}`, data),
     getRevenue: () => api.get('/billing/revenue'),
 };
 
 // Admin
 export const adminAPI = {
     getUsers: (role) => api.get('/admin/users', { params: { role } }),
+    createUser: (data) => api.post('/admin/users', data),
     updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
     deleteUser: (id) => api.delete(`/admin/users/${id}`),
+    getDashboard: () => api.get('/admin/dashboard'),
     getAnalytics: () => api.get('/admin/analytics'),
     addTherapist: (data) => api.post('/admin/therapists', data),
+};
+
+// Notifications
+export const notificationsAPI = {
+    getAll: () => api.get('/notifications'),
+    markRead: (id) => api.put(`/notifications/${id}/read`),
+};
+
+// Logs
+export const logsAPI = {
+    getAll: () => api.get('/logs'),
 };
 
 export default api;

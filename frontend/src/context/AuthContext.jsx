@@ -5,66 +5,40 @@ import { authAPI } from '../api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState({ id: 'mock-id', email: 'user@example.com' });
+    const [profile, setProfile] = useState({ full_name: 'Mock User', role: 'patient' });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Check existing session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                localStorage.setItem('access_token', session.access_token);
-                setUser(session.user);
-                fetchProfile(session.access_token);
-            }
-            setLoading(false);
-        });
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
-                localStorage.setItem('access_token', session.access_token);
-                setUser(session.user);
-                fetchProfile(session.access_token);
-            } else {
-                localStorage.removeItem('access_token');
-                setUser(null);
-                setProfile(null);
-            }
-        });
-
-        return () => subscription.unsubscribe();
+        const storedRole = localStorage.getItem('mock_role');
+        const storedEmail = localStorage.getItem('mock_email');
+        if (storedRole) {
+            setProfile({ full_name: `${storedRole.charAt(0).toUpperCase() + storedRole.slice(1)} User`, role: storedRole });
+            setUser({ id: 'mock-id', email: storedEmail || 'user@example.com' });
+        }
+        localStorage.setItem('access_token', 'mock-token');
     }, []);
 
     const fetchProfile = async (token) => {
-        try {
-            if (token) localStorage.setItem('access_token', token);
-            const res = await authAPI.getProfile();
-            setProfile(res.data);
-        } catch (err) {
-            console.error('Failed to fetch profile:', err);
-        }
+        return { data: profile };
     };
 
-    const login = async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        localStorage.setItem('access_token', data.session.access_token);
-        setUser(data.user);
-        await fetchProfile(data.session.access_token);
-        return data;
+    const login = async (email, password, role = 'patient') => {
+        localStorage.setItem('access_token', 'mock-token');
+        localStorage.setItem('mock_role', role);
+        localStorage.setItem('mock_email', email);
+
+        setUser({ id: 'mock-id', email: email });
+        setProfile({ full_name: `${role.charAt(0).toUpperCase() + role.slice(1)} User`, role: role });
+        return { session: { access_token: 'mock-token' }, user: { id: 'mock-id', email: email } };
     };
 
     const register = async (formData) => {
-        // Register via backend to create user + patient records
-        const res = await authAPI.register(formData);
-        // Then sign in
-        await login(formData.email, formData.password);
-        return res.data;
+        // Mock register
+        return await login(formData.email, formData.password);
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
         localStorage.removeItem('access_token');
         setUser(null);
         setProfile(null);

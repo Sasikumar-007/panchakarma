@@ -15,6 +15,8 @@ import PrescriptionsPage from './pages/PrescriptionsPage';
 import BillingPage from './pages/BillingPage';
 import TherapiesPage from './pages/TherapiesPage';
 import ManageUsersPage from './pages/ManageUsersPage';
+import ActivityLogsPage from './pages/ActivityLogsPage';
+import DoshaHistoryPage from './pages/DoshaHistoryPage';
 
 import './index.css';
 
@@ -25,11 +27,16 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+import Topbar from './components/Topbar';
+
 function AppLayout({ children }) {
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content">{children}</main>
+      <div className="main-content">
+        <Topbar />
+        <main className="page-content">{children}</main>
+      </div>
     </div>
   );
 }
@@ -84,6 +91,16 @@ function AppRoutes() {
       <Route path="/manage-users" element={
         <ProtectedRoute>
           <AppLayout><ManageUsersPage /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/activity-logs" element={
+        <ProtectedRoute>
+          <AppLayout><ActivityLogsPage /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/dosha-history" element={
+        <ProtectedRoute>
+          <AppLayout><DoshaHistoryPage /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/analytics" element={

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('patient');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -14,8 +15,8 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await login(email, password);
-            toast.success('Welcome back!');
+            await login(email, password, role);
+            toast.success(`Welcome back, ${role}!`);
             navigate('/dashboard');
         } catch (err) {
             toast.error(err.message || 'Login failed');
@@ -56,8 +57,22 @@ export default function LoginPage() {
                             required
                         />
                     </div>
+                    <div className="form-group">
+                        <label className="form-label">Login As Role</label>
+                        <select
+                            className="form-input"
+                            value={role}
+                            onChange={e => setRole(e.target.value)}
+                            required
+                        >
+                            <option value="patient">Patient</option>
+                            <option value="admin">Admin</option>
+                            <option value="doctor">Doctor</option>
+                            <option value="therapist">Therapist</option>
+                        </select>
+                    </div>
                     <button type="submit" className="btn btn-primary w-full btn-lg" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? 'Signing in...' : `Sign In as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
                     </button>
                 </form>
 

@@ -20,11 +20,12 @@ export default function Dashboard() {
         try {
             const role = profile?.role;
             if (role === 'admin') {
-                const [analytics, revenue] = await Promise.all([
+                const [dashboard, analytics, revenue] = await Promise.all([
+                    adminAPI.getDashboard(),
                     adminAPI.getAnalytics(),
                     billingAPI.getRevenue(),
                 ]);
-                setData({ analytics: analytics.data, revenue: revenue.data });
+                setData({ dashboard: dashboard.data, analytics: analytics.data, revenue: revenue.data });
             } else if (role === 'doctor') {
                 const [appts, therapies] = await Promise.all([
                     appointmentsAPI.getAll(),
@@ -68,10 +69,10 @@ export default function Dashboard() {
             {role === 'admin' && data?.analytics && (
                 <>
                     <div className="card-grid card-grid-4 mb-6">
-                        <StatCard icon={<FiUsers />} label="Doctors" value={data.analytics.users?.doctors || 0} color="blue" />
-                        <StatCard icon={<FiHeart />} label="Therapists" value={data.analytics.users?.therapists || 0} color="purple" />
-                        <StatCard icon={<FiUsers />} label="Patients" value={data.analytics.users?.patients || 0} color="green" />
-                        <StatCard icon={<FiDollarSign />} label="Revenue" value={`₹${(data.analytics.total_revenue || 0).toLocaleString()}`} color="yellow" />
+                        <StatCard icon={<FiUsers />} label="Total Users" value={data.dashboard?.total_users || 0} color="purple" />
+                        <StatCard icon={<FiUsers />} label="Doctors" value={data.dashboard?.doctors || 0} color="blue" />
+                        <StatCard icon={<FiHeart />} label="Therapists" value={data.dashboard?.therapists || 0} color="green" />
+                        <StatCard icon={<FiUsers />} label="Patients" value={data.dashboard?.patients || 0} color="yellow" />
                     </div>
                     <div className="card-grid card-grid-2">
                         <div className="card">
